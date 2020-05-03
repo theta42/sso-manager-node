@@ -1,0 +1,106 @@
+<%- include('top') %>
+<script id="profileTemplate" type="text/html">
+<h2><i>User Name:</i> <b>{{uid}}</b></h2>
+<i>Name:</i> <b>{{givenName}} {{sn}}</b><br />
+<i>Email:</i> <b>{{mail}} </b><br />
+<i>Phone:</i> <b>{{mobile}} </b><br />
+<i>Home Directory:</i> <b>{{homeDirectory}} </b><br />
+<i>Login Shell:</i> <b>{{loginShell}} </b><br />
+<i>Unix User ID:</i> <b>{{uidNumber}} </b><br />
+<i>Unix Group ID:</i> <b>{{gidNumber}} </b><br />
+<i>LDAP DN:</i> <b>{{dn}} </b><br />
+<i>Joined</i> <b>{{createTimestamp}} </b><br />
+<i>Joined</i> <b>{{modifyTimestamp}} </b><br />
+
+
+<img id="profile_photo" >
+</script>
+<script type="text/javascript">
+
+	function hexToBase64(str) {
+	    return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
+	}
+
+	function tableAJAX(actionMessage){
+		var profileTemplate = $('#profileTemplate').html();
+
+		$('#tableAJAX').html('').hide();
+		app.util.actionMessage('Refreshing user list...')
+		var user;
+		app.auth.isLoggedIn(function(error, data){
+			// data.photo = unescape(encodeURIComponent(data.jpegPhoto));
+			data.createTimestamp = moment(data.createTimestamp, "YYYYMMDDHHmmssZ").fromNow();
+			data.modifyTimestamp = moment(data.modifyTimestamp, "YYYYMMDDHHmmssZ").fromNow();
+
+			user_row = Mustache.render(profileTemplate, data);
+			$('#tableAJAX').append(user_row);
+			user = data
+			$('#tableAJAX').fadeIn('slow');
+			app.util.actionMessage(actionMessage || '', {type: 'info'});
+
+		});
+	}
+
+	function getInvite(){
+		app.user.createInvite(function(error, data){
+			console.log(data)
+			$('#invite_token').html(location.origin+"/login/invite/"+data.token);
+		});
+	}
+
+	$(document).ready(function(){
+		tableAJAX(); //populate the table
+	});
+</script>
+<div class="row" style="display:none">
+	<div class="col-md-4">
+		<div class="card mb-3 card-default">
+			<div class="card-header">
+				<span class="card-title">
+					<div class="float-right">
+						<i class="far fa-arrows-v"></i>
+					</div>
+					Invite User
+				</span>
+			</div>
+			<div class="card-body">
+				<button onclick="getInvite(this)">New Invite Token</button>
+				<div>
+					<b id="invite_token"></b>
+				</div>
+
+			</div>
+		</div>
+		<div class="card mb-3 card-default">
+			<div class="card-header">
+					<div class="float-right">
+						<i class="far fa-arrows-v"></i>
+					</div>
+					<i class="fas fa-user-plus"></i> Add new user
+			</div>
+			<div class="card-body">
+				<%- include('user_form') %>
+
+			</div>
+		</div>
+	</div>
+	<div class="col-md-8">
+		<div class="card card-default">
+			<div class="card-header">
+				User List
+				<div class="float-right">
+						<i class="far fa-arrows-v"></i>
+					</div>
+				</div>
+			<div class="card-body" style="padding-bottom:0">
+				<div class="alert alert-warning actionMessage" style="display:none">
+					<!-- Message after AJAX action is preformed -->
+				</div>
+				<div id="tableAJAX" style="display:none">
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<%- include('bottom') %>
