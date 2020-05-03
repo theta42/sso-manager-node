@@ -76,7 +76,7 @@ async function removeMember(client, group, user){
 }
 
 
-Group = {};
+var Group = {};
 
 Group.list = async function(){
 	try{
