@@ -5,25 +5,20 @@
 	}
 
 	$(document).ready(function(){
-		$('form').attr('action', 'auth/invite/<%= invite.token %>').attr('evalAJAX', 'location.replace("/login");')
-
+		$('form').attr('action', 'auth/invite/<%= invite.token %>/<%= invite.mail_token %>').attr('evalAJAX', 'location.replace("/login");')
+		$('[name="mail"').val('<%= invite.mail %>').prop("disabled", true);
 	});
 </script>
 <div class="row" style="display:none">
 		<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<div class="panel-title">
-					Add new user
-					<div class="pull-right">
-						<label class="glyphicon glyphicon-circle-arrow-down panel-toggle"></label>
-					</div>
-				</div>
+		<div class="card">
+			<div class="card-header">
+				Add new user
 			</div>
-			<div class="panel-body">
-				<h3>
-					Invited By: <b><%= invite.created_by %></b>, On <b><%= invite.created_on %></b>
-				</h3>
+			<div class="card-body">
+				<p>
+					Invited By: <b><%= invite.created_by %></b>, <%= invite.created_on %>
+				</p>
 				<div class="alert alert-warning actionMessage" style="display:none">
 					<!-- Message after AJAX action is preformed -->
 				</div>

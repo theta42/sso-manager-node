@@ -3,6 +3,7 @@
 const { Client, Attribute, Change } = require('ldapts');
 const crypto = require('crypto');
 
+const {Mail} = require('./email');
 const {Token, InviteToken} = require('./token');
 const conf = require('../app').conf.ldap;
 
@@ -47,7 +48,9 @@ async function addPosixAccount(client, data){
       uid: data.uid,
       uidNumber: data.uidNumber,
       gidNumber: data.gidNumber,
+      givenName: data.givenName,
       mail: data.mail,
+      mobile: data.mobile,
       loginShell: data.loginShell,
       homeDirectory: data.homeDirectory,
       userPassword: data.userPassword,
@@ -81,6 +84,14 @@ async function addLdapUser(client, data){
   }
 }
 
+async function deleteLdapUser(client, data){
+	try{
+		await client.del(`cn=${data.cn},${conf.groupBase}`);
+		await client.del(data.dn);
+	}catch(error){
+		throw error;
+	}
+}
 
 async function changeLdapPassword(client, data){
   try{
@@ -100,13 +111,7 @@ async function changeLdapPassword(client, data){
 const user_parse = function(data){
 	if(data[conf.userNameAttribute]){
 		data.username = data[conf.userNameAttribute]
-		// delete data[conf.userNameAttribute];
 	}
-
-	// if(data.uidNumber){
-	// 	data.uid = data.uidNumber;
-	// 	delete data.uidNumber;
-	// }
 
 	return data;
 }
@@ -114,11 +119,6 @@ const user_parse = function(data){
 var User = {}
 
 User.backing = "LDAP";
-
-User.keyMap = {
-	'username': {isRequired: true, type: 'string', min: 3, max: 500},
-	'password': {isRequired: true, type: 'string', min: 3, max: 500},
-}
 
 User.list = async function(){
 	try{
@@ -170,14 +170,14 @@ User.listDetail = async function(){
 User.get = async function(data){
 	try{
 		if(typeof data !== 'object'){
-			let username = data;
+			let uid = data;
 			data = {};
-			data.username = username;
+			data.uid = uid;
 		}
 		
 		await client.bind(conf.bindDN, conf.bindPassword);
 
-		let filter = `(&${conf.userFilter}(${conf.userNameAttribute}=${data.username}))`;
+		let filter = `(&${conf.userFilter}(${conf.userNameAttribute}=${data.uid}))`;
 
 		const res = await client.search(conf.userBase, {
 			scope: 'sub',
@@ -225,7 +225,18 @@ User.add = async function(data) {
 
 		await client.unbind();
 
-		return this.get(data.uid);
+		let user = await this.get(data.uid);
+
+
+		await Mail.sendTemplate(
+			user.mail,
+			'welcome',
+			{
+				user: user
+			}
+		)
+
+		return user;
 
 	}catch(error){
 		if(error.message.includes('exists')){
@@ -244,13 +255,15 @@ User.addByInvite = async function(data){
 	try{
 		let token = await InviteToken.get(data.token);
 
-		if(!token.is_valid){
+		if(!token.is_valid && data.mailToken !== token.mail_token){
 			let error = new Error('Token Invalid');
 			error.name = 'Token Invalid';
 			error.message = `Token is not valid or as allready been used. ${data.token}`;
 			error.status = 401;
 			throw error;
 		}
+
+		data.mail = token.mail;
 
 		let user = await this.add(data);
 
@@ -265,13 +278,37 @@ User.addByInvite = async function(data){
 
 };
 
-// User.remove = async function(data){
-// 	try{
-// 		return await linuxUser.removeUser(this.username);
-// 	}catch(error){
-// 		throw error;
-// 	}
-// };
+User.verifyEmail = async function(data){
+	try{
+		let token = await InviteToken.get(data.token);
+		await token.update({mail: data.mail})
+		await Mail.sendTemplate(
+			data.mail,
+			'validate_link',
+			{
+				link:`${data.url}/login/invite/${token.token}/${token.mail_token}`
+			}
+		)
+	}catch(error){
+		throw error;
+	}
+};
+
+User.remove = async function(data){
+	try{
+
+		await client.bind(conf.bindDN, conf.bindPassword);
+
+		await deleteLdapUser(client, this);
+
+		await client.unbind();
+
+		return true
+
+	}catch(error){
+		throw error;
+	}
+};
 
 // User.setPassword = async function(data){
 // 	try{

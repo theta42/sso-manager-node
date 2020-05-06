@@ -29,14 +29,15 @@ router.all('/logout', async function(req, res, next){
 	}
 });
 
-router.post('/invite/:token', async function(req, res, next) {
+router.post('/invite/:token/:mailToken', async function(req, res, next) {
 	try{
 		req.body.token = req.params.token;
+		req.body.mailToken = req.params.mailToken;
 		let user = await User.addByInvite(req.body);
 		let token = await AuthToken.add(user);
 
 		return res.json({
-			user: user.username,
+			user: user.uid,
 			token: token.token
 		});
 
@@ -44,6 +45,21 @@ router.post('/invite/:token', async function(req, res, next) {
 		next(error);
 	}
 
+});
+
+router.post('/invite/:token', async function(req, res, next){
+	try{
+		let data = {
+			token: req.params.token,
+			url: `${req.protocol}://${req.hostname}`,
+			mail: req.body.mail,
+		}
+
+		await User.verifyEmail(data);
+		return res.send({message: 'sent'});
+	}catch(error){
+		next(error)
+	}
 });
 
 module.exports = router;

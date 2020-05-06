@@ -20,8 +20,8 @@
 				return;
 			}
 
-			$( '<b>' ).html( ' - ' + error_message ).appendTo( $input.siblings( 'label' ) );
-			$input.parent().addClass("has-error");
+			$( '<b>' ).html( ' - ' + error_message ).appendTo( $input.parents('.form-group').children( 'label' ) );
+			$input.addClass("is-invalid");
 			failedCount++;
 			return false;
 		}
@@ -35,8 +35,8 @@
 			value = $input.val(), //link to input value
 			rule = attr[0];
 
-		$input.siblings( 'label' ).children( 'b' ).remove(); //removes old error
-		$input.parent().removeClass( "has-error" ); //removes has-error class
+		$input.parents('.form-group').children( 'label' ).children( 'b' ).remove(); //removes old error
+		$input.removeClass( "is-invalid" ); //removes is-invalid class
 
 		//checks if field is required, and length 
 		if (isNaN(requirement) === false && requirement && value.length < requirement) {

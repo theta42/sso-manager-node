@@ -1,6 +1,10 @@
+'use strict';
+
 var express = require('express');
 var router = express.Router();
+const moment = require('moment');
 const {InviteToken} = require('./../models/token');
+
 
 /* GET home page. */
 router.get('/', async function(req, res, next) {
@@ -12,20 +16,37 @@ router.get('/users', function(req, res, next) {
   res.render('users', { title: 'Express' });
 });
 
-router.get('/login/invite/:token', async function(req, res, next){
+router.get('/login/invite/:token/:mailToken', async function(req, res, next){
 	try{
-		console.log('token', req.params.token)
+		
 		let token = await InviteToken.get(req.params.token);
-		console.log('invite', token);
-		if(token.is_valid){
+
+		if(token.is_valid && token.mail !== '__NONE__' && token.mail_token === req.params.mailToken){
+			token.created_on = moment(token.created_on, 'x').fromNow();
   			res.render('invite', { title: 'Express', invite: token });
 		}else{
-			next({status: 404});
+			next({message: 'token not found', status: 404});
 		}
 	}catch(error){
 		next(error);
 	}
 });
+
+router.get('/login/invite/:token', async function(req, res, next){
+	try{
+		let token = await InviteToken.get(req.params.token);
+		token.created_on = moment(token.created_on, 'x').fromNow();
+
+		if(token.is_valid){
+  			res.render('invite_email', { title: 'Express', invite: token });
+		}else{
+			next({message: 'token not found', status: 404});
+		}
+	}catch(error){
+		next(error);
+	}
+});
+
 
 /* GET home page. */
 router.get('/login', function(req, res, next) {

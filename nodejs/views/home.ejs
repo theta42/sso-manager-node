@@ -11,8 +11,6 @@
 <i>LDAP DN:</i> <b>{{dn}} </b><br />
 <i>Joined</i> <b>{{createTimestamp}} </b><br />
 <i>Joined</i> <b>{{modifyTimestamp}} </b><br />
-
-
 <img id="profile_photo" >
 </script>
 <script type="text/javascript">
@@ -43,7 +41,6 @@
 
 	function getInvite(){
 		app.user.createInvite(function(error, data){
-			console.log(data)
 			$('#invite_token').html(location.origin+"/login/invite/"+data.token);
 		});
 	}
@@ -54,14 +51,15 @@
 </script>
 <div class="row" style="display:none">
 	<div class="col-md-4">
-		<div class="card mb-3 card-default">
+		<div class="shadow-lg card mb-3 card-default">
 			<div class="card-header">
-				<span class="card-title">
-					<div class="float-right">
-						<i class="far fa-arrows-v"></i>
-					</div>
-					Invite User
-				</span>
+				<div class="float-right">
+
+					<i class="far fa-arrows-v"></i>
+
+				</div>
+				Invite User
+
 			</div>
 			<div class="card-body">
 				<button onclick="getInvite(this)">New Invite Token</button>
@@ -71,24 +69,47 @@
 
 			</div>
 		</div>
-		<div class="card mb-3 card-default">
+		<div class="shadow-lg card mb-3 card-default">
 			<div class="card-header">
 					<div class="float-right">
 						<i class="far fa-arrows-v"></i>
 					</div>
-					<i class="fas fa-user-plus"></i> Add new user
+					<i class="fas fa-user-plus"></i>
+					Services
 			</div>
 			<div class="card-body">
-				<%- include('user_form') %>
-
+				<ul class="list-group text-dark">
+					<a href="https://emby.718it.biz/" target="_blank" class="text-dark">
+						<li class="list-group-item text-dark">
+								<i class="fad fa-film"></i>
+								Emby
+						</li>
+					</a>
+					<a href="https://git.theta42.com" target="_blank" class="text-dark">
+						<li class="list-group-item text-dark">
+								<i class="fab fa-git"></i>
+								Git server
+						</li>
+					</a>
+					<a href="https://pve.admin.vm42.us" target="_blank" class="text-dark">
+						<li class="list-group-item text-dark">
+								<i class="fad fa-server"></i>
+								Promox (contact wmanlty for access)
+						</li>
+					</a>
+					<li class="list-group-item text-dark">
+							<i class="fad fa-terminal"></i>
+							ssh:718it.biz
+					</li>
+				</ul>
 			</div>
 		</div>
 	</div>
 	<div class="col-md-8">
-		<div class="card card-default">
+		<div class="shadow-lg card card-default">
 			<div class="card-header">
 				User List
-				<div class="float-right">
+				<div class="hover-effect float-right">
 						<i class="far fa-arrows-v"></i>
 					</div>
 				</div>

@@ -1,12 +1,14 @@
+'use strict';
+
 const {User} = require('./user');
 const {Token, AuthToken} = require('./token');
 
-Auth = {}
+var Auth = {}
 Auth.errors = {}
 
 Auth.errors.login = function(){
-	let error = new Error('PamLoginFailed');
-	error.name = 'PamLoginFailed';
+	let error = new Error('LDAPLoginFailed');
+	error.name = 'LDAPLoginFailed';
 	error.message = `Invalid Credentials, login failed.`;
 	error.status = 401;
 

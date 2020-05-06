@@ -29,7 +29,9 @@ Token.check = async function(data){
 var InviteToken = Object.create(Token({
 	name: 'invite',
 	keyMap:{
-		claimed_by: {default:"__NONE__", isRequired: false, type: 'string',}
+		claimed_by: {default:"__NONE__", isRequired: false, type: 'string',},
+		mail: {default:"__NONE__", isRequired: false, type: 'string',},
+		mail_token: {default: UUID, type: 'string', min: 36, max: 36},
 	}
 }));
 
@@ -53,7 +55,7 @@ var AuthToken = Object.create(Token({
 }));
 
 AuthToken.add = async function(data){
-	data.created_by = data.username;
+	data.created_by = data.uid;
 	return AuthToken.__proto__.add(data);
 };
 

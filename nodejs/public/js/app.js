@@ -112,8 +112,9 @@ app.auth = (function(app) {
 		});
 	}
 
-	function logOut(){
+	function logOut(callack){
 		localStorage.removeItem('APIToken');
+		callack();
 	}
 
 	function makeUserFromInvite(args, callack){
@@ -150,13 +151,13 @@ app.user = (function(app){
 	}
 
 	function remove(args, callack){
-		app.api.delete('user/'+ args.username, function(error, data){
+		app.api.delete('user/'+ args.uid, function(error, data){
 			callack(error, data);
 		});
 	}
 
 	function changePassword(args, callack){
-		app.api.put('users/'+ arg.username || '', args, function(error, data){
+		app.api.put('users/'+ arg.uid || '', args, function(error, data){
 			callack(error, data);
 		});
 	}
@@ -313,8 +314,6 @@ function formAJAX( btn, del ) {
 	var formData = $form.find( '[name]' ).serializeObject(); // builds query formDataing
 	var method = $form.attr('method') || 'post';
 
-	console.log('formAJAX method', method)
-
 	if( !$form.validate(
 		{
 			form: {
@@ -326,9 +325,9 @@ function formAJAX( btn, del ) {
 	}
 
 	app.api[method]($form.attr( 'action' ), formData, function(error, data){
-		tableAJAX( data.message ); //re-populate table
+		app.util.actionMessage( data.message ); //re-populate table
 		if(!error){
-			eval( $form.attr( 'evalAJAX' ) ); //gets JS to run after completion
+			eval($form.attr('evalAJAX')); //gets JS to run after completion
 		}
 	});
 

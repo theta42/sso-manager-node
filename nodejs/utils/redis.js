@@ -1,8 +1,10 @@
+'use strict';
+
 const {createClient} = require('redis');
 const {promisify} = require('util');
 
 const config = {
-	prefix: 'proxy_'
+	prefix: 'sso_'
 }
 
 function client() {

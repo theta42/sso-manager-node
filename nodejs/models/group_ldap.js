@@ -4,7 +4,7 @@ const { Client, Attribute, Change } = require('ldapts');
 const conf = require('../app').conf.ldap;
 
 const client = new Client({
-  url: conf.url,
+	url: conf.url,
 });
 
 async function getGroups(client){
@@ -25,21 +25,21 @@ async function getGroups(client){
 }
 
 async function addGroup(client, data){
-  try{
+	try{
 
-    await client.add(`cn=${data.name},${conf.groupBase}`, {
-      cn: data.name,
-      member: data.owner,
-      description: data.description,
-      owner: data.owner,
-      objectclass: [ 'groupOfNames', 'top'  ]
-    });
+		await client.add(`cn=${data.name},${conf.groupBase}`, {
+			cn: data.name,
+			member: data.owner,
+			description: data.description,
+			owner: data.owner,
+			objectclass: [ 'groupOfNames', 'top'  ]
+		});
 
-    return data;
+		return data;
 
-  }catch(error){
-    throw error;
-  }
+	}catch(error){
+		throw error;
+	}
 }
 
 async function addMember(client, group, user){
@@ -61,18 +61,18 @@ async function addMember(client, group, user){
 
 async function removeMember(client, group, user){
   try{
-    await client.modify(group.dn, [
-      new Change({
-        operation: 'delete',
-        modification: new Attribute({
-          type: 'member',
-          values: [user.dn] 
-        })}),
-    ]); 
-  }catch(error){
-    if(error = "TypeOrValueExistsError")return ;
-    throw error;
-  }
+	await client.modify(group.dn, [
+		new Change({
+			operation: 'delete',
+			modification: new Attribute({
+				type: 'member',
+				values: [user.dn] 
+			})}),
+		]); 
+	}catch(error){
+		if(error = "TypeOrValueExistsError")return ;
+		throw error;
+	}
 }
 
 
@@ -131,6 +131,21 @@ Group.get = async function(data){
 
 	}catch(error){
 		throw error;
+	}
+}
+
+Group.add = async function(data){
+	try{
+		await client.bind(conf.bindDN, conf.bindPassword);
+
+		await addGroup(client, data);
+
+		await client.unbind();
+
+		return this.get(data);
+
+	}catch(error){
+
 	}
 }
 

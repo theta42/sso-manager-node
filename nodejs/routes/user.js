@@ -15,7 +15,7 @@ router.get('/', async function(req, res, next){
 
 router.post('/', async function(req, res, next){
 	try{
-		req.body.created_by = req.user.username
+		req.body.created_by = req.user.uid
 
 		return res.json({results: await User.add(req.body)});
 	}catch(error){
@@ -23,11 +23,13 @@ router.post('/', async function(req, res, next){
 	}
 });
 
-router.delete('/:username', async function(req, res, next){
+router.delete('/:uid', async function(req, res, next){
 	try{
-		let user = await User.get(req.params.username);
+		let user = await User.get(req.params.uid);
 
-		return res.json({username: req.params.username, results: await user.remove()})
+		console.log('delete user', user);
+
+		return res.json({uid: req.params.uid, results: await user.remove()})
 	}catch(error){
 		next(error);
 	}
@@ -36,7 +38,7 @@ router.delete('/:username', async function(req, res, next){
 router.get('/me', async function(req, res, next){
 	try{
 
-		return res.json(await User.get({username: req.user.username}));
+		return res.json(await User.get({uid: req.user.uid}));
 	}catch(error){
 		next(error);
 	}
@@ -50,9 +52,9 @@ router.put('/password', async function(req, res, next){
 	}
 });
 
-router.put('/password/:username', async function(req, res, next){
+router.put('/password/:uid', async function(req, res, next){
 	try{
-		let user = await User.get(req.params.username);
+		let user = await User.get(req.params.uid);
 		return res.json({results: await user.setPassword(req.body)});
 	}catch(error){
 		next(error);
@@ -72,7 +74,7 @@ router.post('/invite', async function(req, res, next){
 router.post('/key', async function(req, res, next){
 	try{
 		let added = await User.addSSHkey({
-			username: req.user.username,
+			uid: req.user.uid,
 			key: req.body.key
 		});
 

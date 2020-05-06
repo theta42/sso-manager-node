@@ -1,0 +1,13 @@
+
+.hover-effect {
+	transition: all .5s ease;
+}
+
+.hover-effect:hover {
+	color: darkblue;
+	transition: all .5s ease;
+	background-color: inherit;
+	-ms-transform: scale(1.1);
+	-webkit-transform: scale(1.1); 
+	transform: scale(1.1); /* Standard syntax */
+}
