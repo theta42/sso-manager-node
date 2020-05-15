@@ -6,8 +6,12 @@ const {Group} = require('../models/group_ldap');
 
 router.get('/', async function(req, res, next){
 	try{
+		let member = req.query.member ? await User.get(req.query.member) : {}
+
+		console.log('member', member)
+
 		return res.json({
-			results:  await Group[req.query.detail ? "listDetail" : "list"]()
+			results:  await Group[req.query.detail ? "listDetail" : "list"](member.dn)
 		});
 	}catch(error){
 		next(error);

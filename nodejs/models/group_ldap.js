@@ -7,11 +7,14 @@ const client = new Client({
 	url: conf.url,
 });
 
-async function getGroups(client){
+async function getGroups(client, member){
 	try{
+
+		let memberFilter = member ? `(member=${member})`: ''
+
 		let groups = (await client.search(conf.groupBase, {
 			scope: 'sub',
-			filter: '(&(objectClass=groupOfNames))',
+			filter: `(&(objectClass=groupOfNames)${memberFilter})`,
 			attributes: ['*', 'createTimestamp', 'modifyTimestamp'],
 		})).searchEntries;
 
@@ -81,11 +84,11 @@ async function removeMember(client, group, user){
 
 var Group = {};
 
-Group.list = async function(){
+Group.list = async function(member){
 	try{
 		await client.bind(conf.bindDN, conf.bindPassword);
 
-		let groups = await getGroups(client)
+		let groups = await getGroups(client, member)
 
 		await client.unbind();
 
@@ -95,11 +98,11 @@ Group.list = async function(){
 	}
 }
 
-Group.listDetail = async function(){
+Group.listDetail = async function(member){
 	try{
 		await client.bind(conf.bindDN, conf.bindPassword);
 
-		let groups = await getGroups(client)
+		let groups = await getGroups(client, member)
 
 		await client.unbind();
 
@@ -206,8 +209,5 @@ Group.remove = async function(){
 		throw error;
 	}
 }
-
-
-
 
 module.exports = {Group};

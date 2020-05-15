@@ -1,7 +1,7 @@
 <%- include('top') %>
 <script id="rowTemplate" type="text/html">
 	<p>
-	<div class="card">
+	<div class="card shadow-lg">
 		<div class="card-header">
 			<i class="fad fa-users-class"></i>
 			Group: {{ cn }}
@@ -93,7 +93,7 @@
 </script>
 <div class="row" style="display:none">
 	<div class="col-md-4">
-		<div class="card">
+		<div class="card shadow-lg">
 			<div class="card-header">
 				<i class="fas fa-layer-plus"></i>
 				Add new group
@@ -117,13 +117,12 @@
 		</div>
 	</div>
 	<div class="col-md-8">
-		<div class="card">
+		<div class="card shadow-lg">
 			<div class="card-header">
 				<i class="fad fa-users-class"></i>
 				Group list
 			</div>
-			<div class="alert alert-warning actionMessage" style="display:none">
-				<!-- Message after AJAX action is preformed -->
+			<div class="card-header actionMessage" style="display:none">
 			</div>
 			<div class="card-body">
 				<div class="" id="tableAJAX">

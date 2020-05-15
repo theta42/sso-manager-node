@@ -12,75 +12,84 @@ const client = new Client({
 });
 
 async function addPosixGroup(client, data){
+
   try{
-    const groups = (await client.search(conf.groupBase, {
-      scope: 'sub',
-      filter: '(&(objectClass=posixGroup))',
-    })).searchEntries;
+	const groups = (await client.search(conf.groupBase, {
+	  scope: 'sub',
+	  filter: '(&(objectClass=posixGroup))',
+	})).searchEntries;
 
-    data.gidNumber = (Math.max(...groups.map(i => i.gidNumber))+1)+'';
+	data.gidNumber = (Math.max(...groups.map(i => i.gidNumber))+1)+'';
 
-    await client.add(`cn=${data.cn},${conf.groupBase}`, {
-      cn: data.cn,
-      gidNumber: data.gidNumber,
-      objectclass: [ 'posixGroup', 'top' ]
-    });
+	await client.add(`cn=${data.cn},${conf.groupBase}`, {
+	  cn: data.cn,
+	  gidNumber: data.gidNumber,
+	  objectclass: [ 'posixGroup', 'top' ]
+	});
 
-    return data;
+	return data;
 
   }catch(error){
-    throw error;
+	throw error;
   }
 }
 
 async function addPosixAccount(client, data){
   try{
-    const people = (await client.search(conf.userBase, {
-      scope: 'sub',
-      filter: conf.userFilter,
-    })).searchEntries;
+	const people = (await client.search(conf.userBase, {
+		scope: 'sub',
+		filter: conf.userFilter,
+	})).searchEntries;
 
-    data.uidNumber = (Math.max(...people.map(i => i.uidNumber))+1)+'';
+	data.uidNumber = (Math.max(...people.map(i => i.uidNumber))+1)+'';
 
-    await client.add(`cn=${data.cn},${conf.userBase}`, {
-      cn: data.cn,
-      sn: data.sn,
-      uid: data.uid,
-      uidNumber: data.uidNumber,
-      gidNumber: data.gidNumber,
-      givenName: data.givenName,
-      mail: data.mail,
-      mobile: data.mobile,
-      loginShell: data.loginShell,
-      homeDirectory: data.homeDirectory,
-      userPassword: data.userPassword,
-      objectclass: [ 'inetOrgPerson', 'posixAccount', 'top' ]
-    });
+	await client.add(`cn=${data.cn},${conf.userBase}`, {
+		cn: data.cn,
+		sn: data.sn,
+		uid: data.uid,
+		uidNumber: data.uidNumber,
+		gidNumber: data.gidNumber,
+		givenName: data.givenName,
+		mail: data.mail,
+		mobile: data.mobile,
+		loginShell: data.loginShell,
+		homeDirectory: data.homeDirectory,
+		userPassword: data.userPassword,
+		description: data.description || ' ', 
+		sudoHost: 'ALL',
+		sudoCommand: 'ALL',
+		sudoUser: data.uid,
+		sshPublicKey: data.sshPublicKey,
+		objectclass: ['inetOrgPerson', 'sudoRole', 'ldapPublicKey', 'posixAccount', 'top' ]
+	});
 
-    return data
+	return data
 
   }catch(error){
-    throw error;
+	throw error;
   }
 
 }
 
 async function addLdapUser(client, data){
 
+	var group;
+
   try{
-    data.uid = `${data.givenName[0]}${data.sn}`;
-    data.cn = data.uid;
-    data.loginShell = '/bin/bash';
-    data.homeDirectory= `/home/${data.uid}`;
-    data.userPassword = '{MD5}'+crypto.createHash('md5').update(data.userPassword, "binary").digest('base64');
+	data.uid = `${data.givenName[0]}${data.sn}`;
+	data.cn = data.uid;
+	data.loginShell = '/bin/bash';
+	data.homeDirectory= `/home/${data.uid}`;
+	data.userPassword = '{MD5}'+crypto.createHash('md5').update(data.userPassword, "binary").digest('base64');
 
-    data = await addPosixGroup(client, data);
-    data = await addPosixAccount(client, data);
+	group = await addPosixGroup(client, data);
+	data = await addPosixAccount(client, group);
 
-    return data;
+	return data;
 
   }catch(error){
-    throw error;
+  	await deleteLdapDN(client, `cn=${data.uid},${conf.groupBase}`, true);
+	throw error;
   }
 }
 
@@ -93,9 +102,19 @@ async function deleteLdapUser(client, data){
 	}
 }
 
+async function deleteLdapDN(client, dn, ignoreError){
+	try{
+		client.del(dn)
+	}catch(error){
+		if(!ignoreError) throw error;
+		console.error('ERROR: deleteLdapDN', error)
+	}
+}
+
 const user_parse = function(data){
 	if(data[conf.userNameAttribute]){
 		data.username = data[conf.userNameAttribute]
+		data.userPassword = undefined;
 	}
 
 	return data;
@@ -152,22 +171,21 @@ User.listDetail = async function(){
 	}
 };
 
-User.get = async function(data, value){
+User.get = async function(data, key){
 	try{
 		if(typeof data !== 'object'){
 			let uid = data;
 			data = {};
 			data.uid = uid;
 		}
-		
+
+
 		await client.bind(conf.bindDN, conf.bindPassword);
 
-		data.searchKey = data.searchKey || conf.userNameAttribute;
+		data.searchKey = data.searchKey || key || conf.userNameAttribute;
 		data.searchValue = data.searchValue || data.uid;
 
 		let filter = `(&${conf.userFilter}(${data.searchKey}=${data.searchValue}))`;
-
-		console.log('get filter', filter)
 
 		const res = await client.search(conf.userBase, {
 			scope: 'sub',
@@ -196,10 +214,10 @@ User.get = async function(data, value){
 	}
 };
 
-User.exists = async function(data){
+User.exists = async function(data, key){
 	// Return true or false if the requested entry exists ignoring error's.
 	try{
-		await this.get(data);
+		await this.get(data, key);
 
 		return true
 	}catch(error){
@@ -241,6 +259,35 @@ User.add = async function(data) {
 	}
 };
 
+User.update = async function(data){
+	try{
+		let editableFeilds = ['mobile', 'sshPublicKey', 'description'];
+
+		await client.bind(conf.bindDN, conf.bindPassword);
+
+		for(let field of editableFeilds){
+			if(data[field]){
+				await client.modify(this.dn, [
+					new Change({
+						operation: 'replace',
+						modification: new Attribute({
+							type: field,
+							values: [data[field]] 
+						})
+					}),
+				]);
+			}
+		}
+
+		await client.unbind()
+
+		return this;
+
+	}catch(error){
+		throw error;
+	}
+};
+
 User.addByInvite = async function(data){
 	try{
 		let token = await InviteToken.get(data.token);
@@ -270,6 +317,11 @@ User.addByInvite = async function(data){
 
 User.verifyEmail = async function(data){
 	try{
+
+		let exists = await this.exists(data.mail, 'mail');
+
+		if(exists) throw new Error('EmailInUse');
+
 		let token = await InviteToken.get(data.token);
 		await token.update({mail: data.mail})
 		await Mail.sendTemplate(
@@ -293,8 +345,6 @@ User.passwordReset = async function(url, mail){
 			searchKey: 'mail',
 			searchValue: mail
 		});
-
-		console.log('user', user)
 
 		let token = await PasswordResetToken.add(user);
 
@@ -338,11 +388,11 @@ User.setPassword = async function(data){
 
 		await client.modify(this.dn, [
 		  new Change({
-		    operation: 'replace',
-		    modification: new Attribute({
-		      type: 'userPassword',
-		      values: ['{MD5}'+crypto.createHash('md5').update(data.userPassword, "binary").digest('base64')] 
-		    })}),
+			operation: 'replace',
+			modification: new Attribute({
+			  type: 'userPassword',
+			  values: ['{MD5}'+crypto.createHash('md5').update(data.userPassword, "binary").digest('base64')] 
+			})}),
 		]); 
 
 		await client.unbind();

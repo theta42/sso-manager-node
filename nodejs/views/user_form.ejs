@@ -1,4 +1,4 @@
-<form action="user/" method="post">
+<form action="user/" method="post" onsubmit="formAJAX(this)">
 	<input type="hidden" class="form-control" name="delete" value="false" />
 	<div class="form-group">
 		<label class="control-label">First name</label>
@@ -16,6 +16,11 @@
 	</div>
 
 	<div class="form-group">
+		<label class="control-label">SSH Public Key</label>
+		<input type="text" class="form-control" name="sshPublicKey" placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQ..." />
+	</div>
+
+	<div class="form-group">
 		<label class="control-label">Mobile Phone</label>
 		<input type="text" class="form-control" name="mobile" placeholder="9175551234" validate=":9" />
 	</div>
@@ -28,5 +33,9 @@
 		<label class="control-label">Again</label>
 		<input type="password" class="form-control" name="passwordMatch" placeholder="Retype password" validate="eq:userPassword"/>
 	</div>
-	<button type="button" onclick="formAJAX(this)" class="btn btn-outline-dark">Add</button>
+	<div class="form-group">
+		<label class="control-label">User Description (Optional)</label>
+		<textarea class="form-control" name="description" placeholder="Admin group for gitea app"></textarea>
+	</div>
+	<button type="submit" class="btn btn-outline-dark">Add</button>
 </form>

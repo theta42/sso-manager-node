@@ -2,21 +2,33 @@
 <script id="rowTemplate" type="text/html">
 	<tr action="user/password/{{ username }}" method="put" evalAJAX="$form.trigger('reset')">
 		<td>
-			{{ uidNumber }}:{{ uid }}	
+			{{ uidNumber }}
 		</td>
 		<td>
-			{{givenName}} {{sn}} {{mail}}
+			<a href='/users/{{uid}}'>{{ uid }}</a>	
 		</td>
 		<td>
-			<button type="button" onclick="app.user.remove({uid: '{{uid}}'}, function(){tableAJAX('username {{uid}} delete.')})" class="btn btn-sm btn-danger">
-				Delete
+			{{givenName}} {{sn}} 
+		</td>
+		<td>
+			{{mail}}
+		</td>
+		<td>
+			{{#sudoUser}}<i class="fad fa-check-square"></i>{{/sudoUser}}
+		</td>
+		<td>
+			{{#sshPublicKey}}<i class="fad fa-check-square"></i>{{/sshPublicKey}}
+		</td>
+		<td>
+			<button type="button" onclick="app.user.remove({uid: '{{uid}}'}, function(){renderUsers('username {{uid}} delete.')})" class="btn btn-sm btn-danger">
+				<i class="fad fa-user-slash"></i>
 			</button>
 		</td>
 	</tr>
 </script>
 <script type="text/javascript">
 
-	function tableAJAX(actionMessage){
+	function renderUsers(actionMessage){
 		var rowTemplate = $('#rowTemplate').html();
 		var $target = $('#tableAJAX');
 
@@ -38,12 +50,13 @@
 	}
 
 	$(document).ready(function(){
-		tableAJAX(); //populate the table
+		renderUsers(); //populate the table
+		$('form[action="user/"]').attr('evalAJAX', 'renderUsers()')
 	});
 </script>
 <div class="row" style="display:none">
 	<div class="col-md-4">
-		<div class="card">
+		<div class="card shadow-lg">
 			<div class="card-header">
 				<i class="fas fa-user-plus"></i>
 				Add new user
@@ -55,7 +68,7 @@
 		</div>
 	</div>
 	<div class="col-md-8">
-		<div class="card">
+		<div class="card shadow-lg">
 			<div class="card-header">
 				<i class="fad fa-th-list"></i>
 				User List
@@ -65,9 +78,13 @@
 				<div class="table-responsive">
 					<table class="table">
 						<thead>
+							<th>id</th>
+							<th>uid</th>
 							<th>Name</th>
-							<th>Password</th>
-							<th>Delete</th>
+							<th>eMail</th>
+							<th>Sudo</th>
+							<th>key</th>
+							<th></th>
 						</thead>
 						<tbody id="tableAJAX">
 							<!-- ajax loaded table -->

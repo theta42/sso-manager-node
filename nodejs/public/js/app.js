@@ -86,6 +86,7 @@ app.api = (function(app){
 })(app)
 
 app.auth = (function(app) {
+	var user = {}
 	function setToken(token){
 		localStorage.setItem('APIToken', token);
 	}
@@ -97,6 +98,7 @@ app.auth = (function(app) {
 	function isLoggedIn(callack){
 		if(getToken()){
 			return app.api.get('user/me', function(error, data){
+				if(!error) app.auth.user = data;
 				return callack(error, data);
 			});
 		}else{
@@ -153,6 +155,7 @@ app.user = (function(app){
 	}
 
 	function remove(args, callack){
+		if(!confirm('Delete '+ args.uid+ 'user?')) return false;
 		app.api.delete('user/'+ args.uid, function(error, data){
 			callack(error, data);
 		});
@@ -298,8 +301,6 @@ app.util = (function(app){
 $.holdReady( true );
 if(!location.pathname.includes('/login')){
 	app.auth.isLoggedIn(function(error, isLoggedIn){
-			console.log('here', error, isLoggedIn)
-
 		if(error || !isLoggedIn){
 			app.auth.logOut(function(){})
 			location.replace('/login/?redirect='+location.pathname);
@@ -335,16 +336,16 @@ function formAJAX( btn, del ) {
 	var formData = $form.find( '[name]' ).serializeObject(); // builds query formDataing
 	var method = $form.attr('method') || 'post';
 
+	if( !$form.validate()) {
+		app.util.actionMessage('Please fix the form errors.', $form, 'danger')
+		return false;
+	}
+	
 	app.util.actionMessage( 
 		'<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>',
 		$form,
 		'info'
 	);
-
-	if( !$form.validate()) {
-		app.util.actionMessage('Please fix the form errors.', $form, 'danger')
-		return false;
-	}
 
 	app.api[method]($form.attr('action'), formData, function(error, data){
 		app.util.actionMessage(data.message, $form, error ? 'danger' : 'success'); //re-populate table

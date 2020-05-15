@@ -27,9 +27,23 @@ router.delete('/:uid', async function(req, res, next){
 	try{
 		let user = await User.get(req.params.uid);
 
-		console.log('delete user', user);
-
 		return res.json({uid: req.params.uid, results: await user.remove()})
+	}catch(error){
+		next(error);
+	}
+});
+
+router.put('/:uid', async function(req, res, next){
+	try{
+		let user = await User.get(req.params.uid);
+
+		// console.log('update user', user);
+
+		return res.json({
+			results: await user.update(req.body),
+			message: `Updated ${req.params.uid} user`
+
+		});
 	}catch(error){
 		next(error);
 	}
@@ -89,6 +103,16 @@ router.post('/key', async function(req, res, next){
 		next(error);
 	}
 
+});
+
+router.get('/:uid', async function(req, res, next){
+	try{
+		return res.json({
+			results:  await User.get(req.params.uid),
+		});
+	}catch(error){
+		next(error);
+	}
 });
 
 module.exports = router;

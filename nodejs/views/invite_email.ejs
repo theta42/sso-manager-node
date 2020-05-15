@@ -32,11 +32,12 @@
 				</p>
 				<form action="auth/invite/<%= invite.token %>" onsubmit="formAJAX(this)" evalAJAX="emailSent()">
 					<div class="form-group">
+						<label class="control-label">Email</label>
 						<div class="input-group mb-3">
 						  <div class="input-group-prepend">
 						    <span class="input-group-text" ><i class="fad fa-at"></i></span>
 						  </div>
-							<input type="email" name="mail" class="form-control" placeholder="jsmith@gmail.com" required />
+							<input type="email" name="mail" class="form-control" placeholder="jsmith@gmail.com" validate="email:3" />
 						</div>
 					</div>
 

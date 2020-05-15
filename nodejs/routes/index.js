@@ -16,6 +16,10 @@ router.get('/users', function(req, res, next) {
   res.render('users', { title: 'Express' });
 });
 
+router.get('/users/:uid', function(req, res, next) {
+  res.render('home', { title: 'Express' });
+});
+
 router.get('/groups', function(req, res, next) {
   res.render('groups', { title: 'Express' });
 });

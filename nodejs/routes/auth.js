@@ -35,7 +35,7 @@ router.post('/resetpassword', async function(req, res, next){
 	try{
 		let sent = await User.passwordReset(`${req.protocol}://${req.hostname}`, req.body.mail);
 
-		console.info('resetpassword for', req.body.mail, sent)
+		console.info('resetpassword for', req.body.mail, 'sent')
 
 		return res.json({
 			message: 'If the emaill address is in our system, you will receive a message.'

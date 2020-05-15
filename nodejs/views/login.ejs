@@ -55,8 +55,6 @@
 			<div class="card-header actionMessage" style="display:none">
 			</div>
 			<div class="card-body">
-				<div class="alert alert-warning actionMessage" style="display:none">
-				</div>
 				<h3>Coming soon!</h3>
 				<p>
 					<ul class="list-group">
@@ -84,11 +82,12 @@
 					<input type="hidden" name="redirect" value="<%= redirect %>">
 
 					<div class="form-group">
+						<label class="control-label">Email</label>
 						<div class="input-group mb-3">
 						  <div class="input-group-prepend">
 						    <span class="input-group-text" ><i class="fad fa-at"></i></span>
 						  </div>
-							<input type="email" name="mail" class="form-control" placeholder="jsmith@gmail.com" required />
+							<input type="email" name="mail" class="form-control" placeholder="jsmith@gmail.com" validate="email:3" />
 						</div>
 					</div>
 
