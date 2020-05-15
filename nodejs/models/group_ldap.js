@@ -54,7 +54,10 @@ async function addMember(client, group, user){
 			}),
 		]); 
 	}catch(error){
-		if(error = "TypeOrValueExistsError")return ;
+		// if(error = "TypeOrValueExistsError"){
+		// 	console.error('addMember error skipped', error)
+		// 	return ;
+		// }
 		throw error;
 	}
 }
@@ -100,6 +103,7 @@ Group.listDetail = async function(){
 
 		await client.unbind();
 
+
 		return groups;
 	}catch(error){
 		throw error;
@@ -121,14 +125,24 @@ Group.get = async function(data){
 			scope: 'sub',
 			filter: `(&(objectClass=groupOfNames)(cn=${data.name}))`,
 			attributes: ['*', 'createTimestamp', 'modifyTimestamp'],
-		})).searchEntries;
+		})).searchEntries[0];
 
 		await client.unbind();
 
 		if(!Array.isArray(group.member)) group.member = [group.member];
 
-		return group;
-
+		if(group){
+			let obj = Object.create(this);
+			Object.assign(obj, group);
+			
+			return obj;
+		}else{
+			let error = new Error('GroupNotFound');
+			error.name = 'GroupNotFound';
+			error.message = `LDAP:${data.cn} does not exists`;
+			error.status = 404;
+			throw error;
+		}
 	}catch(error){
 		throw error;
 	}
@@ -145,8 +159,55 @@ Group.add = async function(data){
 		return this.get(data);
 
 	}catch(error){
-
+		throw error;
 	}
 }
+
+Group.addMember = async function(user){
+	try{
+		await client.bind(conf.bindDN, conf.bindPassword);
+
+		await addMember(client, this, user);
+
+		await client.unbind();
+
+		return this;
+
+	}catch(error){
+		throw error;
+	}
+};
+
+Group.removeMember = async function(user){
+	try{
+		await client.bind(conf.bindDN, conf.bindPassword);
+
+		await removeMember(client, this, user);
+
+		await client.unbind();
+
+		return this;
+
+	}catch(error){
+		throw error;
+	}
+};
+
+Group.remove = async function(){
+	try{
+		await client.bind(conf.bindDN, conf.bindPassword);
+
+		await client.del(this.dn);
+
+		await client.unbind();
+
+		return true;
+	}catch(error){
+		throw error;
+	}
+}
+
+
+
 
 module.exports = {Group};

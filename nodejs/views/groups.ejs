@@ -1,0 +1,135 @@
+<%- include('top') %>
+<script id="rowTemplate" type="text/html">
+	<p>
+	<div class="card">
+		<div class="card-header">
+			<i class="fad fa-users-class"></i>
+			Group: {{ cn }}
+		</div>
+		<div class="card-body">
+			<p>
+				{{ description }}
+			</p>
+			<p>
+				<ul class="list-group">
+				{{ #member }}
+					<li class="list-group-item">
+						<i class="fad fa-user"></i> {{ uid }}
+						<button type="button" action="group/{{groupCN}}/{{uid}}" method="delete" onclick="formAJAX(this)" evalAJAX="tableAJAX(data.message)" class="btn btn-sm btn-danger float-right">
+							<i class="fad fa-user-slash"></i>
+						</button>
+					</li>
+				{{ /member }}
+				</ul>
+			</p>
+
+			<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+				<i class="fad fa-user-plus"></i>
+			</button>
+			<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+			{{ #toAdd }}{{#.}}
+				<a class="dropdown-item" action="group/{{groupCN}}/{{uid}}" method="put" onclick="formAJAX(this)" evalAJAX="tableAJAX(data.message)">
+					<i class="fad fa-user"></i> {{uid}}
+				</a>
+			{{/.}}{{ /toAdd }}
+			
+			</div>
+
+			<button type="button" onclick="app.group.remove({cn: '{{cn}}'}, function(){tableAJAX('Group {{cn}} deleted.')})" class="btn btn-danger float-right">
+				<i class="fad fa-trash"></i>
+			</button>
+		</div>
+	</div>
+	</p>
+</script>
+<script type="text/javascript">
+
+	var userlist;
+
+	function getUserList(callback){
+		app.user.list(function(error, data){
+			userlist = data.results;
+			callback()
+		})
+	}
+
+
+	function tableAJAX(actionMessage){
+		var rowTemplate = $('#rowTemplate').html();
+		var $target = $('#tableAJAX');
+
+		$target.html('').hide();
+		app.util.actionMessage('Refreshing user list...', $target);
+
+		app.group.list(function(error, data){
+			$.each( data.results, function(key, value) {
+
+				// console.log(value.member)
+
+				value.toAdd = userlist.map(function(user){
+					if(!value.member.includes(user.dn)) return user;
+				})
+				value.member = value.member.map(function(user){
+					return {
+						dn: user,
+						uid: user.match(/cn=[a-zA-Z0-9\_\-\@\.]+/)[0].replace('cn=', '')
+					}
+				})
+				value.groupCN = value.cn;
+				user_row = Mustache.render(rowTemplate, value);
+				$target.append(user_row);
+			});
+
+			$target.fadeIn('slow');
+
+			app.util.actionMessage(actionMessage || '', $target, 'info');
+
+		});
+	}
+
+	$(document).ready(function(){
+		getUserList(tableAJAX);
+	});
+</script>
+<div class="row" style="display:none">
+	<div class="col-md-4">
+		<div class="card">
+			<div class="card-header">
+				<i class="fas fa-layer-plus"></i>
+				Add new group
+			</div>
+			<div class="card-header actionMessage" style="display:none"></div>
+			<div class="card-body">
+				<form action="group/" method="post" onsubmit="formAJAX(this)" evalAJAX="tableAJAX('')">
+					<div class="form-group">
+						<label class="control-label">Name</label>
+						<input type="text" class="form-control" name="name" placeholder="app_gitea_admin" validate=":3" />
+					</div>
+
+					<div class="form-group">
+						<label class="control-label">Description</label>
+						<textarea class="form-control" name="description" placeholder="Admin group for gitea app" validate=":3"></textarea>
+					</div>
+
+					<button type="submit" class="btn btn-outline-dark">Add</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-8">
+		<div class="card">
+			<div class="card-header">
+				<i class="fad fa-users-class"></i>
+				Group list
+			</div>
+			<div class="alert alert-warning actionMessage" style="display:none">
+				<!-- Message after AJAX action is preformed -->
+			</div>
+			<div class="card-body">
+				<div class="" id="tableAJAX">
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<%- include('bottom') %>

@@ -52,10 +52,13 @@ router.put('/password', async function(req, res, next){
 	}
 });
 
-router.put('/password/:uid', async function(req, res, next){
+router.put('/:uid/password', async function(req, res, next){
 	try{
 		let user = await User.get(req.params.uid);
-		return res.json({results: await user.setPassword(req.body)});
+		return res.json({
+			results: await user.setPassword(req.body),
+			message: `User ${user.uid} password changed.`
+		});
 	}catch(error){
 		next(error);
 	}

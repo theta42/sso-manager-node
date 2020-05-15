@@ -22,7 +22,7 @@ Auth.login = async function(data){
 
 		return {user, token}
 	}catch(error){
-		throw error;
+		throw this.errors.login();
 	}
 };
 

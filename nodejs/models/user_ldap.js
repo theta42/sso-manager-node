@@ -4,7 +4,7 @@ const { Client, Attribute, Change } = require('ldapts');
 const crypto = require('crypto');
 
 const {Mail} = require('./email');
-const {Token, InviteToken} = require('./token');
+const {Token, InviteToken, PasswordResetToken} = require('./token');
 const conf = require('../app').conf.ldap;
 
 const client = new Client({
@@ -93,21 +93,6 @@ async function deleteLdapUser(client, data){
 	}
 }
 
-async function changeLdapPassword(client, data){
-  try{
-    await client.modify(`cn=${data.uid},${conf.userBase}`, [
-      new Change({
-        operation: 'replace',
-        modification: new Attribute({
-          type: 'userPassword',
-          values: ['{MD5}'+crypto.createHash('md5').update(data.userPassword, "binary").digest('base64')] 
-        })}),
-    ]); 
-  }catch(error){
-    throw error;
-  }
-}
-
 const user_parse = function(data){
 	if(data[conf.userNameAttribute]){
 		data.username = data[conf.userNameAttribute]
@@ -167,7 +152,7 @@ User.listDetail = async function(){
 	}
 };
 
-User.get = async function(data){
+User.get = async function(data, value){
 	try{
 		if(typeof data !== 'object'){
 			let uid = data;
@@ -177,7 +162,12 @@ User.get = async function(data){
 		
 		await client.bind(conf.bindDN, conf.bindPassword);
 
-		let filter = `(&${conf.userFilter}(${conf.userNameAttribute}=${data.uid}))`;
+		data.searchKey = data.searchKey || conf.userNameAttribute;
+		data.searchValue = data.searchValue || data.uid;
+
+		let filter = `(&${conf.userFilter}(${data.searchKey}=${data.searchValue}))`;
+
+		console.log('get filter', filter)
 
 		const res = await client.search(conf.userBase, {
 			scope: 'sub',
@@ -197,7 +187,7 @@ User.get = async function(data){
 		}else{
 			let error = new Error('UserNotFound');
 			error.name = 'UserNotFound';
-			error.message = `LDAP:${data.uid} does not exists`;
+			error.message = `LDAP:${data.searchValue} does not exists`;
 			error.status = 404;
 			throw error;
 		}
@@ -289,10 +279,41 @@ User.verifyEmail = async function(data){
 				link:`${data.url}/login/invite/${token.token}/${token.mail_token}`
 			}
 		)
+
+		return this;
 	}catch(error){
 		throw error;
 	}
 };
+
+User.passwordReset = async function(url, mail){
+	try{
+
+		let user = await User.get({
+			searchKey: 'mail',
+			searchValue: mail
+		});
+
+		console.log('user', user)
+
+		let token = await PasswordResetToken.add(user);
+
+		await Mail.sendTemplate(
+			user.mail,
+			'reset_link',
+			{
+				user: user,
+				link:`${url}/login/resetpassword/${token.token}`
+			}
+		)
+
+		return true;
+	}catch(error){
+		// if(error.name === 'UserNotFound') return false;
+		throw error;
+	}
+};
+
 
 User.remove = async function(data){
 	try{
@@ -303,22 +324,34 @@ User.remove = async function(data){
 
 		await client.unbind();
 
-		return true
+		return true;
 
 	}catch(error){
 		throw error;
 	}
 };
 
-// User.setPassword = async function(data){
-// 	try{
-// 		await linuxUser.setPassword(this.username, data.password);
+User.setPassword = async function(data){
+	try{
 
-// 		return this;
-// 	}catch(error){
-// 		throw error;
-// 	}
-// };
+		await client.bind(conf.bindDN, conf.bindPassword);
+
+		await client.modify(this.dn, [
+		  new Change({
+		    operation: 'replace',
+		    modification: new Attribute({
+		      type: 'userPassword',
+		      values: ['{MD5}'+crypto.createHash('md5').update(data.userPassword, "binary").digest('base64')] 
+		    })}),
+		]); 
+
+		await client.unbind();
+
+		return this;
+	}catch(error){
+		throw error;
+	}
+};
 
 User.invite = async function(){
 	try{

@@ -15,13 +15,12 @@
 			<div class="card-header">
 				Add new user
 			</div>
+			<div class="card-header actionMessage" style="display:none">
+			</div>
 			<div class="card-body">
 				<p>
 					Invited By: <b><%= invite.created_by %></b>, <%= invite.created_on %>
 				</p>
-				<div class="alert alert-warning actionMessage" style="display:none">
-					<!-- Message after AJAX action is preformed -->
-				</div>
 				<%- include('user_form') %>
 
 			</div>

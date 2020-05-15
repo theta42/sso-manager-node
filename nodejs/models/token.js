@@ -59,4 +59,13 @@ AuthToken.add = async function(data){
 	return AuthToken.__proto__.add(data);
 };
 
-module.exports = {Token, InviteToken, AuthToken}
+var PasswordResetToken = Object.create(Token({
+	name: 'auth',
+}));
+
+PasswordResetToken.add = async function(data){
+	data.created_by = data.uid;
+	return PasswordResetToken.__proto__.add(data);
+};
+
+module.exports = {Token, InviteToken, AuthToken, PasswordResetToken};

@@ -8,26 +8,7 @@
 	})
 
 	$(document).ready(function(){
-		$( "form[action='login']" ).submit(function( event ) {
-			event.preventDefault();
-			$form = $(this);
-			app.util.actionMessage('')
 
-			if($form.attr('isValid') !== 'true'){
-				console.log('')
-				return app.util.actionMessage('Please fix the errors bellow!')
-			}
-
-			app.auth.logIn($form.serializeObject(), function(error, data){
-				if(data){
-					app.util.actionMessage('Login successful!');
-					window.location.href = app.util.getUrlParameter('redirect') || '/';
-
-				}else{
-					app.util.actionMessage('Login Failed, please try again');						
-				}
-			});
-		});
 	});
 </script>
 
@@ -37,10 +18,10 @@
 			<div class="card-header">
 				Password Log in
 			</div>
+			<div class="card-header actionMessage" style="display:none">
+			</div>
 			<div class="card-body">
-				<div class="alert alert-warning actionMessage" style="display:none">
-				</div>
-				<form action="login" onsubmit="$(this).validate()">
+				<form action="auth/login" onsubmit="formAJAX(this)" evalAJAX="app.auth.setToken(data.token);window.location.href = app.util.getUrlParameter('redirect') || '/';">
 					<input type="hidden" name="redirect" value="<%= redirect %>">
 
 					<div class="form-group">
@@ -71,20 +52,26 @@
 			<div class="card-header">
 				Social Login
 			</div>
+			<div class="card-header actionMessage" style="display:none">
+			</div>
 			<div class="card-body">
 				<div class="alert alert-warning actionMessage" style="display:none">
 				</div>
 				<h3>Coming soon!</h3>
-				<ul>
-					<li><i class="fab fa-google"></i> Login with google OATH</li>
-					<li><i class="fab fa-github"></i> Login with github OATH</li>
-					<li><i class="fab fa-facebook"></i> Login with facebook OATH</li>
-				</ul>
+				<p>
+					<ul class="list-group">
+						<li class="list-group-item"><i class="fab fa-google"></i> Login with google OATH</li>
+						<li class="list-group-item"><i class="fab fa-github"></i> Login with github OATH</li>
+						<li class="list-group-item"><i class="fab fa-facebook"></i> Login with facebook OATH</li>
+					</ul>
+				</p>
 			</div>
 		</div>
-		<div class="shadow-lg card border-danger mb-3">
+		<div class="shadow-lg card mb-3">
 			<div class="card-header">
 				Password Reset
+			</div>
+			<div class="card-header actionMessage" style="display:none">
 			</div>
 			<div class="card-body">
 				<p>
@@ -93,7 +80,7 @@
 					we will email with the required information to get back up
 					and running!
 				</p>
-				<form action="reset_password" onsubmit="$(this).validate()">
+				<form action="auth/resetpassword" onsubmit="formAJAX(this)">
 					<input type="hidden" name="redirect" value="<%= redirect %>">
 
 					<div class="form-group">

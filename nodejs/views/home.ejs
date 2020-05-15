@@ -9,34 +9,43 @@
 <i>Unix User ID:</i> <b>{{uidNumber}} </b><br />
 <i>Unix Group ID:</i> <b>{{gidNumber}} </b><br />
 <i>LDAP DN:</i> <b>{{dn}} </b><br />
+<i>SSH Public Key</i> <b>{{sshPublicKey}}</b><br />
 <i>Joined</i> <b>{{createTimestamp}} </b><br />
-<i>Joined</i> <b>{{modifyTimestamp}} </b><br />
+<i>Edited</i> <b>{{modifyTimestamp}} </b><br />
 <img id="profile_photo" >
+</script>
+
+<script id="paswordResetTemplate" type="text/html">
+	<h3>
+		Reset Password for {{uid}}
+	</h3>
+	<form action="user/{{uid}}/password" method="put" onsubmit="formAJAX(this)">
+		<div class="form-group">
+			<label class="control-label">Password</label>
+			<div class="input-group mb-3">
+			  <div class="input-group-prepend">
+			    <span class="input-group-text" ><i class="fad fa-key"></i></span>
+			  </div>
+				<input type="password" name="userPassword" class="form-control" placeholder="hunter123!" validate=":3" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label">Agian</label>
+			<div class="input-group mb-3">
+			  <div class="input-group-prepend">
+			    <span class="input-group-text" ><i class="fad fa-key"></i></span>
+			  </div>
+				<input type="password" name="password" class="form-control" placeholder="hunter123!" validate="eq:userPassword" />
+			</div>
+		</div>
+		<button type="submit" class="btn btn-outline-dark">Change</button>
+	</form>
+
 </script>
 <script type="text/javascript">
 
 	function hexToBase64(str) {
-	    return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
-	}
-
-	function tableAJAX(actionMessage){
-		var profileTemplate = $('#profileTemplate').html();
-
-		$('#tableAJAX').html('').hide();
-		app.util.actionMessage('Refreshing user list...')
-		var user;
-		app.auth.isLoggedIn(function(error, data){
-			// data.photo = unescape(encodeURIComponent(data.jpegPhoto));
-			data.createTimestamp = moment(data.createTimestamp, "YYYYMMDDHHmmssZ").fromNow();
-			data.modifyTimestamp = moment(data.modifyTimestamp, "YYYYMMDDHHmmssZ").fromNow();
-
-			user_row = Mustache.render(profileTemplate, data);
-			$('#tableAJAX').append(user_row);
-			user = data
-			$('#tableAJAX').fadeIn('slow');
-			app.util.actionMessage(actionMessage || '', {type: 'info'});
-
-		});
+		return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
 	}
 
 	function getInvite(){
@@ -46,7 +55,26 @@
 	}
 
 	$(document).ready(function(){
-		tableAJAX(); //populate the table
+		var profileTemplate = $('#profileTemplate').html();
+		var paswordResetTemplate = $('#paswordResetTemplate').html(); 
+		var $target = $('#tableAJAX');
+
+		$target.html('').hide();
+		app.auth.isLoggedIn(function(error, data){
+			if(error){
+				app.util.actionMessage(data.message || '', $target, error ? 'danger': null);
+			}else{
+				// data.photo = unescape(encodeURIComponent(data.jpegPhoto));
+				data.createTimestamp = moment(data.createTimestamp, "YYYYMMDDHHmmssZ").fromNow();
+				data.modifyTimestamp = moment(data.modifyTimestamp, "YYYYMMDDHHmmssZ").fromNow();
+
+				$target.html(Mustache.render(profileTemplate, data));
+
+				$('#passwordReset').html(Mustache.render(paswordResetTemplate, data))
+
+				$target.fadeIn('slow');
+			}
+		});
 	});
 </script>
 <div class="row" style="display:none">
@@ -56,11 +84,10 @@
 				<i class="fas fa-user-plus"></i>
 				Invite User
 				<div class="float-right">
-
 					<i class="far fa-arrows-v"></i>
-
 				</div>
-
+			</div>
+			<div class="card-header actionMessage" style="display:none">
 			</div>
 			<div class="card-body">
 				<button onclick="getInvite(this)">New Invite Token</button>
@@ -77,6 +104,8 @@
 					</div>
 					<i class="fad fa-th-list"></i>
 					Services
+			</div>
+			<div class="card-header actionMessage" style="display:none">
 			</div>
 			<div class="card-body">
 				<ul class="list-group text-dark">
@@ -107,14 +136,16 @@
 		</div>
 	</div>
 	<div class="col-md-8">
-		<div class="shadow-lg card card-default">
+		<div class="shadow-lg card card-default mb-8">
 			<div class="card-header">
 				<i class="fad fa-id-card"></i>
 				Profile
 				<div class="hover-effect float-right">
-						<i class="far fa-arrows-v"></i>
-					</div>
+					<i class="far fa-arrows-v"></i>
 				</div>
+			</div>
+			<div class="card-header actionMessage" style="display:none">
+			</div>
 			<div class="card-body" style="padding-bottom:0">
 				<div class="alert alert-warning actionMessage" style="display:none">
 					<!-- Message after AJAX action is preformed -->
@@ -124,6 +155,22 @@
 				</div>
 			</div>
 		</div>
+		<br />
+		<div class="shadow-lg card">
+			<div class="card-header">
+				<i class="fad fa-undo-alt"></i>
+				Password Reset
+				<div class="float-right">
+					<i class="far fa-arrows-v"></i>
+				</div>
+			</div>
+			<div class="card-header actionMessage" style="display:none">
+			</div>
+			<div id="passwordReset" class="card-body">
+
+			</div>
+		</div>
+
 	</div>
 </div>
 <%- include('bottom') %>
