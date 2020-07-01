@@ -1,6 +1,6 @@
 <%- include('top') %>
 <script id="rowTemplate" type="text/html">
-	<tr action="user/password/{{ username }}" method="put" evalAJAX="$form.trigger('reset')">
+	<tr class="shadow-lg" action="user/password/{{ username }}" method="put" evalAJAX="$form.trigger('reset')">
 		<td>
 			{{ uidNumber }}
 		</td>
@@ -77,7 +77,7 @@
 			<div class="card-body" style="padding-bottom:0">
 				<div class="table-responsive">
 					<table class="table">
-						<thead>
+						<thead class="shadow-lg">
 							<th>id</th>
 							<th>uid</th>
 							<th>Name</th>
