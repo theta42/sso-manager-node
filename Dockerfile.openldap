@@ -3,6 +3,20 @@
 # self-contained single-node deployment. For production, run a dedicated
 # LDAP server and configure the app via app_* env vars / mounted secrets.js.
 
+# ── Git commit hash (build-time only) ────────────────────────────────────────
+# The final image intentionally has no git binary and no .git directory (kept
+# lean, per .dockerignore), so `git rev-parse` always fails at runtime and
+# build_info.js silently fell back to "unknown". Resolve it here instead,
+# where .git IS available (build context), and bake just the short hash into
+# a file — this stage itself is discarded, only /commit.txt survives via the
+# COPY --from below. Reuses the main base image (already pulled for the real
+# build below) rather than a separate one, so this adds no extra image pull.
+FROM node:20-alpine AS gitinfo
+WORKDIR /repo
+COPY .git ./.git
+RUN { apk add --no-cache git \
+    && git rev-parse --short HEAD > /commit.txt; } 2>/dev/null || echo unknown > /commit.txt
+
 FROM node:20-alpine
 
 # Install OpenLDAP and required packages.
@@ -63,6 +77,9 @@ COPY nodejs/public ./public
 # so the file must exist at /tos.md (mirroring the repo where tos.md sits one
 # level above the nodejs/ app dir). Without this the app crashes on startup.
 COPY tos.md /tos.md
+
+# Baked commit hash from the gitinfo stage (see build_info.js).
+COPY --from=gitinfo /commit.txt ./.build_commit
 
 # Copy startup script
 COPY docker-entrypoint.sh /usr/local/bin/
