@@ -47,15 +47,6 @@ function groupKind(resource) {
   return null;
 }
 
-// The group-model slug for a resource: strip the kind prefix that directory
-// resource slugs carry (`site_local` -> `local`, `host_theta-env` -> `theta-env`)
-// so the group-model builders can re-apply their own `{site}_{kind}_{slug}`
-// structure without double-prefixing. Services are stored without a prefix, so
-// this is a no-op for them.
-function resourceSlug(slug) {
-  return String(slug || '').replace(/^(site|host|app)_/, '');
-}
-
 // Create a groupOfNames if it doesn't already exist. Idempotent; `ownerDn`
 // seeds the mandatory first member. Returns true when created.
 async function ensureGroup(name, ownerDn, description) {
@@ -122,16 +113,18 @@ async function ensureSiteGroups(siteSlug, ownerDn, siteName, siteResourceId) {
 }
 
 // Provision the per-resource groups for a host/app and nest them into the site
-// aggregates (so a site/aggregate admin reaches this resource by membership):
+// aggregates (so a site/aggregate admin reaches this resource by membership).
+// The specific group name uses the resource's slug verbatim
+// (`{site}_{slug}_{level}` -- the kind is carried in the slug, e.g. `host_theta-env`);
+// `kind` (host/app) selects which aggregate the group nests into:
 //
-//   {site}_{kind}_{slug}_admin  -> {site}_{kind}_{slug}_access
-//   {site}_{kind}_{slug}_admin  -> {site}_{kind}s_admin    (aggregate)
-//   {site}_{kind}_{slug}_access -> {site}_{kind}s_access   (aggregate)
-//   app_super_admin             -> {site}_{kind}_{slug}_admin  (legacy cross-app)
+//   {site}_{slug}_admin  -> {site}_{slug}_access
+//   {site}_{slug}_admin  -> {site}_{kind}s_admin    (aggregate)
+//   {site}_{slug}_access -> {site}_{kind}s_access   (aggregate)
+//   app_super_admin      -> {site}_{slug}_admin     (legacy cross-app)
 async function provisionResourceGroups(resource, kind, siteSlug, ownerDn) {
-  const slug = resourceSlug(resource.slug);
-  const accessCn = groups.resourceGroupCns(siteSlug, kind, slug, 'access');
-  const adminCn = groups.resourceGroupCns(siteSlug, kind, slug, 'admin');
+  const accessCn = groups.resourceGroupCns(siteSlug, resource.slug, 'access');
+  const adminCn = groups.resourceGroupCns(siteSlug, resource.slug, 'admin');
 
   await ensureGroup(accessCn, ownerDn, `Access group for ${resource.name}`);
   await ensureGroup(adminCn, ownerDn, `Admin group for ${resource.name}`);
@@ -165,14 +158,14 @@ function validGroupCnsForResource(resource, siteSlug) {
   }
   const kind = groupKind(resource); // 'host'|'app'|null
   if (kind) {
-    const slug = resourceSlug(resource.slug);
-    valid.add(groups.resourceGroupCns(siteSlug, kind, slug, 'admin'));
-    valid.add(groups.resourceGroupCns(siteSlug, kind, slug, 'access'));
+    const slug = resource.slug; // verbatim (kind is carried in the slug)
+    valid.add(groups.resourceGroupCns(siteSlug, slug, 'admin'));
+    valid.add(groups.resourceGroupCns(siteSlug, slug, 'access'));
     valid.add(groups.aggregateGroupCns(siteSlug, kind, 'admin'));
     valid.add(groups.aggregateGroupCns(siteSlug, kind, 'access'));
     valid.add(groups.siteSuperAdminCns(siteSlug));
     valid.add(groups.siteEveryoneCns(siteSlug));
-    return { valid, capRe: new RegExp(`^${siteSlug}_(${kind}_${slug}_|${kind}s_)[a-z0-9-]+$`) };
+    return { valid, capRe: new RegExp(`^${siteSlug}_(${slug}_|${kind}s_)[a-z0-9-]+$`) };
   }
   // oauth/container etc. — only the global god_admin makes sense to pin here.
   valid.add(groups.siteSuperAdminCns(siteSlug));
