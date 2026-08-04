@@ -12,7 +12,11 @@ const {
 	GOD_ADMIN,
 } = require('../utils/groups');
 
-const HOST = { site: 'Main Office', kind: 'host', slug: 'Web 01' };
+// Resource fixtures use already-normalized slugs (the group-model builders treat
+// the site + resource slugs as opaque, not re-slugified -- see groups.js). Raw
+// display names like "Main Office" are normalized by the resource model before
+// they reach the resolver.
+const HOST = { site: 'main-office', kind: 'host', slug: 'web-01' };
 const APP = { site: 'main-office', kind: 'app', slug: 'emby' };
 const OTHER_SITE_HOST = { site: 'branch-office', kind: 'host', slug: 'db' };
 
@@ -40,8 +44,16 @@ describe('group cn builders', () => {
 		expect(aggregateGroupCns('main-office', 'app', 'access')).toBe('main-office_apps_access');
 	});
 	test('site super admin + everyone', () => {
-		expect(siteSuperAdminCns('Main Office')).toBe('main-office_super_admin');
+		expect(siteSuperAdminCns('main-office')).toBe('main-office_super_admin');
 		expect(siteEveryoneCns('main-office')).toBe('main-office_everyone');
+	});
+	test('a directory site slug with a kind prefix is kept verbatim, not re-slugified', () => {
+		// Resource slugs are `site_local` / `host_theta-env` -- re-slugifying the
+		// site (`site_local` -> `site-local`) would corrupt the delimiter.
+		expect(siteSuperAdminCns('site_local')).toBe('site_local_super_admin');
+		expect(siteEveryoneCns('site_local')).toBe('site_local_everyone');
+		expect(aggregateGroupCns('site_local', 'host', 'admin')).toBe('site_local_hosts_admin');
+		expect(resourceGroupCns('site_local', 'host', 'theta-env', 'access')).toBe('site_local_host_theta-env_access');
 	});
 	test('invalid kind throws', () => {
 		expect(() => resourceGroupCns('s', 'service', 'x', 'admin')).toThrow();

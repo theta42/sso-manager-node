@@ -42,25 +42,31 @@ function assertKind(kind) {
 }
 
 // {site}_host_<slug>_<level> / {site}_app_<slug>_<level>
+//
+// `site` is the site resource's slug verbatim (e.g. `site_local`, or a clean
+// `main-office`), NOT slugified: directory resource slugs may legitimately carry
+// a kind prefix (`site_local`, `host_theta-env`), and re-slugifying those would
+// corrupt the delimiter (site_local -> site-local). Callers pass already-
+// normalized site + kind-stripped resource slugs.
 function resourceGroupCns(site, kind, slug, level) {
   assertKind(kind);
-  return `${slugify(site)}_${kind}_${slugify(slug)}_${level}`;
+  return `${site}_${kind}_${slugify(slug)}_${level}`;
 }
 
 // {site}_hosts_<level> / {site}_apps_<level> (plural kind — the aggregate).
 function aggregateGroupCns(site, kind, level) {
   assertKind(kind);
-  return `${slugify(site)}_${kind}s_${level}`;
+  return `${site}_${kind}s_${level}`;
 }
 
 // {site}_super_admin
 function siteSuperAdminCns(site) {
-  return `${slugify(site)}_super_admin`;
+  return `${site}_super_admin`;
 }
 
 // {site}_everyone
 function siteEveryoneCns(site) {
-  return `${slugify(site)}_everyone`;
+  return `${site}_everyone`;
 }
 
 // True if `level` is a known admin/access level (not an opaque capability).
@@ -87,7 +93,10 @@ function levelGrants(level, wanted) {
 // granted groups (see permission.onResource). This keeps the function pure over
 // the user's membership only.
 function hasPermission(memberOf, resource, level) {
-  const site = slugify(resource && resource.site);
+  // `site` is used verbatim (resource slugs may carry a kind prefix, e.g.
+  // `site_local`) -- see resourceGroupCns; the resource `slug` is expected
+  // kind-stripped and already-normalized, so slugify() is a harmless guard.
+  const site = resource && resource.site;
   const kind = resource && resource.kind;
   const slug = slugify(resource && resource.slug);
   const set = new Set(memberOf || []);
